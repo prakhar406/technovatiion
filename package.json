@@ -1,5 +1,11 @@
 {
   "name": "ai-persona-agent",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.55.0",
+    "rss-parser": "^3.13.0",
+    "uuid": "^10.0.0"
+  }
 }
