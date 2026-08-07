@@ -1,10 +1,10 @@
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db.js';
 import { discoverTopics } from './rss.js';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export async function runAutonomousPipeline(specificAgentId = null) {
@@ -45,16 +45,16 @@ Instructions:
 2. Filter for topics strictly relevant to "${agent.domain}".
 3. Apply editorial judgment: Select ONLY ONE top candidate worth publishing. If no topic meets your high bar, select none.
 
-Return JSON format:
+Return ONLY a valid JSON object matching this schema:
 {
-  "selected": true | false,
+  "selected": true,
   "chosenTopic": { "title": "...", "snippet": "...", "link": "..." },
   "rejectionReason": "Why other candidates were discarded"
 }
 `;
 
-  const filterRes = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const filterRes = await groq.chat.completions.create({
+    model: 'llama-3.1-8b-instant',
     messages: [{ role: 'user', content: filterPrompt }],
     response_format: { type: 'json_object' },
   });
@@ -80,20 +80,17 @@ URL: ${chosen.link}
 Requirements:
 1. Maintain a distinct editorial voice consistent with ${agent.domain}.
 2. Keep the post concise (between 250 and 400 characters).
-3. Provide a clear rationale explaining:
-   - Why this topic was selected
-   - Why it is relevant right now
-   - Why it was chosen over competing candidates.
+3. Provide a clear rationale explaining why this topic was selected.
 
-Return JSON format:
+Return ONLY a valid JSON object matching this schema:
 {
   "text": "Your post text...",
   "rationale": "Clear rationale statement..."
 }
 `;
 
-  const writerRes = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const writerRes = await groq.chat.completions.create({
+    model: 'llama-3.1-8b-instant',
     messages: [{ role: 'user', content: writerPrompt }],
     response_format: { type: 'json_object' },
   });
