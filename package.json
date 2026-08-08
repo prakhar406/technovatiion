@@ -1,11 +1,8 @@
 {
-  "name": "ai-persona-agent",
+  "name": "technovatiion",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "dependencies": {
-    "groq-sdk": "^0.7.0",
-    "rss-parser": "^3.13.0",
-    "uuid": "^10.0.0"
+    "groq-sdk": "^0.5.0"
   }
 }
