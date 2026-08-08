@@ -11,9 +11,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       min-height: 100vh;
       margin: 0;
+      padding: 40px 20px;
+      box-sizing: border-box;
     }
     .badge {
       background: #1e1b4b;
@@ -24,8 +25,8 @@
       border: 1px solid #3730a3;
       margin-bottom: 16px;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 8px; }
-    p { color: #9ca3af; margin-bottom: 24px; }
+    h1 { font-size: 2.5rem; margin-bottom: 8px; margin-top: 0; text-align: center; }
+    p.subtitle { color: #9ca3af; margin-bottom: 24px; text-align: center; }
     
     .input-box {
       background: #161b22;
@@ -33,7 +34,8 @@
       border-radius: 12px;
       padding: 6px;
       display: flex;
-      width: 450px;
+      width: 100%;
+      max-width: 550px;
     }
     input {
       background: transparent;
@@ -44,86 +46,270 @@
       outline: none;
       font-size: 1rem;
     }
-    button {
+    button.btn-primary {
       background: #6366f1;
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 10px 18px;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
+      white-space: nowrap;
     }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #status { margin-top: 16px; color: #a5b4fc; }
-    #output { margin-top: 24px; max-width: 600px; width: 100%; }
-    .card { background: #161b22; border: 1px solid #30363d; padding: 16px; border-radius: 8px; margin-top: 12px; }
-    .rationale { background: #0d1117; border-left: 3px solid #6366f1; padding: 8px 12px; margin-top: 10px; font-size: 0.9em; color: #cbd5e1; }
+    /* Category Small Buttons */
+    .categories {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+    .cat-btn {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 5px 12px;
+      border-radius: 16px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cat-btn:hover {
+      background: #30363d;
+      color: #fff;
+      border-color: #818cf8;
+    }
+
+    #status { margin-top: 10px; color: #a5b4fc; text-align: center; font-weight: 500; }
+    #output { margin-top: 24px; max-width: 700px; width: 100%; }
+
+    /* Topic Cards */
+    .topics-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .refresh-btn {
+      background: #21262d;
+      color: #a5b4fc;
+      border: 1px solid #3730a3;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .refresh-btn:hover { background: #1e1b4b; }
+    
+    .topic-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 18px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .topic-card:hover {
+      transform: translateY(-2px);
+      border-color: #6366f1;
+    }
+    .topic-card h3 { margin: 0 0 6px 0; color: #818cf8; font-size: 1.1rem; }
+    .topic-card p { margin: 0; color: #9ca3af; font-size: 0.92rem; line-height: 1.4; }
+
+    /* Blog Post View */
+    .blog-container {
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 28px;
+      border-radius: 12px;
+      line-height: 1.7;
+    }
+    .blog-meta { color: #818cf8; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+    .blog-title { font-size: 2rem; margin: 0 0 18px 0; line-height: 1.25; }
+    .blog-img { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; margin: 18px 0; }
+    .blog-section { margin-top: 24px; }
+    .blog-section h3 { color: #f3f4f6; margin-bottom: 8px; font-size: 1.3rem; }
+    .blog-section p { color: #d1d5db; margin: 0; }
+    .back-btn {
+      background: transparent;
+      color: #9ca3af;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0;
+      margin-bottom: 16px;
+    }
+    .back-btn:hover { color: #fff; }
   </style>
 </head>
 <body>
 
   <div class="badge">✦ Autonomous Persona Engine</div>
   <h1>What should we build today?</h1>
-  <p>Initialize your autonomous AI researcher, engineer, or analyst.</p>
+  <p class="subtitle">Select a topic to generate a full article, or type your own topic below.</p>
 
   <div class="input-box">
-    <input type="text" id="personaInput" value="Robotics Analyst" placeholder="Enter domain or role..." />
-    <button id="generateBtn" onclick="handleGenerate()">Generate</button>
+    <input type="text" id="personaInput" value="Robotics Analyst" placeholder="Enter role or specific topic..." />
+    <button class="btn-primary" id="mainBtn" onclick="fetchTopics()">Get 5 Topics</button>
+  </div>
+
+  <div class="categories">
+    <button class="cat-btn" onclick="selectCategory('AI & Machine Learning')">AI & Machine Learning</button>
+    <button class="cat-btn" onclick="selectCategory('Robotics Analyst')">Robotics Analyst</button>
+    <button class="cat-btn" onclick="selectCategory('Cybersecurity')">Cybersecurity</button>
+    <button class="cat-btn" onclick="selectCategory('Biotech Innovation')">Biotech</button>
+    <button class="cat-btn" onclick="selectCategory('Fintech Strategy')">Fintech</button>
   </div>
 
   <div id="status"></div>
   <div id="output"></div>
 
   <script>
-    async function handleGenerate() {
+    let currentDomain = "Robotics Analyst";
+
+    function selectCategory(cat) {
+      document.getElementById('personaInput').value = cat;
+      fetchTopics();
+    }
+
+    async function fetchTopics() {
       const input = document.getElementById('personaInput').value.trim();
       const status = document.getElementById('status');
       const output = document.getElementById('output');
-      const btn = document.getElementById('generateBtn');
+      const btn = document.getElementById('mainBtn');
 
-      if (!input) {
-        alert('Please enter a role or domain.');
-        return;
-      }
+      if (!input) return alert('Please enter a role or topic.');
 
+      currentDomain = input;
       btn.disabled = true;
-      status.innerText = `Generating AI insights for "${input}"...`;
+      status.innerText = `Generating 5 trending topics for "${input}"...`;
       output.innerHTML = '';
 
       try {
-        const initRes = await fetch('/api/agent/init', {
+        const res = await fetch('/api/agent/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            persona: { name: input, domain: input }
-          })
+          body: JSON.stringify({ action: 'get_topics', domain: input })
         });
 
-        const data = await initRes.json();
+        const data = await res.json();
         btn.disabled = false;
 
-        if (!initRes.ok) throw new Error(data.error || 'Failed to generate agent content.');
+        if (!res.ok) throw new Error(data.error || 'Failed to fetch topics.');
 
-        if (!data.posts || data.posts.length === 0) {
-          status.innerText = 'Evaluation complete. No topics met editorial criteria in this run.';
-          return;
-        }
-
-        status.innerText = 'Generation complete!';
-        output.innerHTML = data.posts.map(post => `
-          <div class="card">
-            <p><strong>Post:</strong> ${post.text}</p>
-            <div class="rationale"><strong>Rationale:</strong> ${post.rationale}</div>
-            ${post.sources && post.sources[0] ? `<p><small><a href="${post.sources[0]}" target="_blank" style="color:#818cf8;">Source Link</a></small></p>` : ''}
-          </div>
-        `).join('');
+        status.innerText = '';
+        renderTopics(data.topics || []);
 
       } catch (err) {
         status.innerText = `Error: ${err.message}`;
         btn.disabled = false;
       }
     }
+
+    function renderTopics(topics) {
+      const output = document.getElementById('output');
+      
+      let html = `
+        <div class="topics-header">
+          <span style="color:#9ca3af; font-weight:600;">Click any topic to generate blog post:</span>
+          <button class="refresh-btn" onclick="fetchTopics()">🔄 Refresh Topics</button>
+        </div>
+      `;
+
+      topics.forEach((t) => {
+        html += `
+          <div class="topic-card" onclick="generateBlog('${escapeQuotes(t.title)}')">
+            <h3>${t.title}</h3>
+            <p>${t.summary}</p>
+          </div>
+        `;
+      });
+
+      // Direct write button option
+      html += `
+        <div style="text-align: center; margin-top: 16px;">
+          <button class="cat-btn" style="border-color:#6366f1; color:#a5b4fc;" onclick="generateBlog('${escapeQuotes(currentDomain)}')">
+            ✍️ Or write blog directly on "${currentDomain}"
+          </button>
+        </div>
+      `;
+
+      output.innerHTML = html;
+    }
+
+    async function generateBlog(topicTitle) {
+      const status = document.getElementById('status');
+      const output = document.getElementById('output');
+      const btn = document.getElementById('mainBtn');
+
+      btn.disabled = true;
+      status.innerText = `Writing full blog post on "${topicTitle}"...`;
+      output.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/agent/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate_blog', selectedTopic: topicTitle })
+        });
+
+        const data = await res.json();
+        btn.disabled = false;
+
+        if (!res.ok) throw new Error(data.error || 'Failed to generate blog.');
+
+        status.innerText = '';
+        renderBlog(data.blog, topicTitle);
+
+      } catch (err) {
+        status.innerText = `Error: ${err.message}`;
+        btn.disabled = false;
+      }
+    }
+
+    function renderBlog(blog, topicTitle) {
+      const output = document.getElementById('output');
+      const img1 = `https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80`;
+      const img2 = `https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80`;
+
+      let sectionsHtml = (blog.sections || []).map(sec => `
+        <div class="blog-section">
+          <h3>${sec.heading}</h3>
+          <p>${sec.content}</p>
+        </div>
+      `).join('');
+
+      output.innerHTML = `
+        <div class="blog-container">
+          <button class="back-btn" onclick="fetchTopics()">← Back to Topics</button>
+          <div class="blog-meta">ARTICLE • ${blog.readTime || '4 min read'}</div>
+          <h1 class="blog-title">${blog.title || topicTitle}</h1>
+          <p style="color:#d1d5db; font-size:1.05rem;">${blog.introduction || ''}</p>
+          
+          <img src="${img1}" class="blog-img" alt="Tech Visual 1" />
+          
+          ${sectionsHtml}
+          
+          <img src="${img2}" class="blog-img" alt="Tech Visual 2" />
+
+          <div class="blog-section" style="border-top: 1px solid #30363d; padding-top: 16px; margin-top: 24px;">
+            <h3>Conclusion</h3>
+            <p>${blog.conclusion || ''}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeQuotes(str) {
+      return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Initial load
+    fetchTopics();
   </script>
 </body>
 </html>
