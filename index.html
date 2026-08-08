@@ -46,7 +46,7 @@
       margin-bottom: 12px;
     }
 
-    input {
+    input, select {
       background: #0d1117;
       border: 1px solid #30363d;
       color: #f0f6fc;
@@ -54,6 +54,16 @@
       border-radius: 6px;
       flex: 1;
       font-size: 0.95rem;
+      outline: none;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    select option {
+      background: #161b22;
+      color: #f0f6fc;
     }
 
     button {
@@ -64,6 +74,7 @@
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
     }
 
     button.btn-feed { background: #238636; }
@@ -135,7 +146,17 @@
     <h3>Initialize Agent</h3>
     <div class="form-group">
       <input type="text" id="personaName" value="Ada" placeholder="Agent Name (e.g., Ada)" />
-      <input type="text" id="personaDomain" value="AI Security" placeholder="Domain (e.g., AI Security)" />
+      
+      <!-- Domain Dropdown Select Menu -->
+      <select id="personaDomain">
+        <option value="AI Security" selected>AI Security</option>
+        <option value="Autonomous Agents">Autonomous Agents</option>
+        <option value="Robotics & Hardware">Robotics & Hardware</option>
+        <option value="LLM Infrastructure">LLM Infrastructure</option>
+        <option value="Cybersecurity">Cybersecurity</option>
+        <option value="Quantum Computing">Quantum Computing</option>
+      </select>
+
       <button id="initBtn" onclick="initAgent()">Initialize Agent</button>
     </div>
     <div id="initResult" class="agent-status"></div>
@@ -156,7 +177,7 @@
   <script>
     async function initAgent() {
       const name = document.getElementById('personaName').value.trim();
-      const domain = document.getElementById('personaDomain').value.trim();
+      const domain = document.getElementById('personaDomain').value;
       const resultDiv = document.getElementById('initResult');
       const initBtn = document.getElementById('initBtn');
 
