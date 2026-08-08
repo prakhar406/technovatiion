@@ -77,7 +77,17 @@
       white-space: nowrap;
     }
 
-    button.btn-feed { background: #238636; }
+    button.btn-refresh {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+    }
+
+    button.btn-refresh:hover {
+      background: #30363d;
+      color: #f0f6fc;
+    }
+
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .agent-status {
@@ -147,7 +157,6 @@
     <div class="form-group">
       <input type="text" id="personaName" value="Ada" placeholder="Agent Name (e.g., Ada)" />
       
-      <!-- Domain Dropdown Select Menu -->
       <select id="personaDomain">
         <option value="AI Security" selected>AI Security</option>
         <option value="Autonomous Agents">Autonomous Agents</option>
@@ -167,7 +176,8 @@
     <h3>Retrieve Feed</h3>
     <div class="form-group">
       <input type="text" id="feedAgentId" placeholder="Paste Agent ID here..." />
-      <button class="btn-feed" onclick="loadFeed()">Fetch Feed</button>
+      <button onclick="loadFeed()">Fetch Feed</button>
+      <button class="btn-refresh" onclick="loadFeed()">↻ Refresh</button>
     </div>
   </div>
 
