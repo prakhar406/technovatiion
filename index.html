@@ -88,7 +88,7 @@
       }
 
       btn.disabled = true;
-      status.innerText = `Initializing agent for "${input}"...`;
+      status.innerText = `Generating AI insights for "${input}"...`;
       output.innerHTML = '';
 
       try {
@@ -100,29 +100,10 @@
           })
         });
 
-        const initData = await initRes.json();
-        if (!initRes.ok) throw new Error(initData.error || 'Failed to initialize agent.');
-
-        const agentId = initData.agentId;
-        status.innerText = `Agent initialized (ID: ${agentId}). Generating feed in 8s...`;
-
-        setTimeout(() => fetchFeed(agentId), 8000);
-
-      } catch (err) {
-        status.innerText = `Error: ${err.message}`;
+        const data = await initRes.json();
         btn.disabled = false;
-      }
-    }
 
-    async function fetchFeed(agentId) {
-      const status = document.getElementById('status');
-      const output = document.getElementById('output');
-      const btn = document.getElementById('generateBtn');
-
-      try {
-        const res = await fetch(`/api/agent/feed?agentId=${agentId}`);
-        const data = await res.json();
-        btn.disabled = false;
+        if (!initRes.ok) throw new Error(data.error || 'Failed to generate agent content.');
 
         if (!data.posts || data.posts.length === 0) {
           status.innerText = 'Evaluation complete. No topics met editorial criteria in this run.';
@@ -139,7 +120,7 @@
         `).join('');
 
       } catch (err) {
-        status.innerText = `Error fetching feed: ${err.message}`;
+        status.innerText = `Error: ${err.message}`;
         btn.disabled = false;
       }
     }
