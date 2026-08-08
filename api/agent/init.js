@@ -1,6 +1,3 @@
-// In-memory global store for dynamic posts
-global.agentPosts = global.agentPosts || {};
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -13,23 +10,64 @@ export default async function handler(req, res) {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) throw new Error('GROQ_API_KEY is not configured in Vercel.');
 
-    const { persona } = req.body || {};
-    const personaName = persona?.name || 'Technology Specialist';
-    const personaDomain = persona?.domain || 'Technology';
+    const { action, domain, selectedTopic } = req.body || {};
+    const targetDomain = domain || 'Technology';
 
-    const systemPrompt = `You are an autonomous AI content specialist for the domain: "${personaDomain}".
+    // ACTION 1: Generate Full Blog Post
+    if (action === 'generate_blog') {
+      const topicToWrite = selectedTopic || targetDomain;
 
-Your task:
-1. Formulate 2 engaging, insightful posts tailored specifically for a "${personaName}".
-2. ALWAYS generate exactly 2 posts.
+      const blogPrompt = `You are a professional technical writer and researcher.
+Write a comprehensive, engaging, and well-structured blog post about: "${topicToWrite}".
 
-Output strictly valid JSON with this structure:
+Output strictly valid JSON with this format:
 {
-  "posts": [
+  "title": "Compelling Title",
+  "readTime": "4 min read",
+  "imageKeyword1": "technology abstract",
+  "imageKeyword2": "futuristic innovation",
+  "introduction": "Engaging introduction paragraph...",
+  "sections": [
     {
-      "text": "Core post or commentary here...",
-      "rationale": "Why this key insight matters for ${personaName}...",
-      "sources": ["https://example.com"]
+      "heading": "Section 1 Heading",
+      "content": "Detailed explanation..."
+    },
+    {
+      "heading": "Section 2 Heading",
+      "content": "Detailed explanation..."
+    }
+  ],
+  "conclusion": "Key takeaway and concluding paragraph..."
+}`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'system', content: blogPrompt }],
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      const data = await response.json();
+      const blogContent = JSON.parse(data.choices[0]?.message?.content || '{}');
+      return res.status(200).json({ type: 'blog', blog: blogContent });
+    }
+
+    // ACTION 2: Generate 5 Topics (Default)
+    const topicPrompt = `You are an expert content strategist for "${targetDomain}".
+Formulate EXACTLY 5 high-value, trending, and distinct article topics for a specialist in "${targetDomain}".
+
+Output strictly valid JSON with this format:
+{
+  "topics": [
+    {
+      "title": "Topic Headline",
+      "summary": "Brief 1-2 sentence rationale or teaser."
     }
   ]
 }`;
@@ -42,39 +80,17 @@ Output strictly valid JSON with this structure:
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate 2 high-value posts and rationales for ${personaName} in the domain of ${personaDomain}.` }
-        ],
+        messages: [{ role: 'system', content: topicPrompt }],
         response_format: { type: 'json_object' }
       })
     });
 
     const data = await response.json();
-    let parsedResponse;
+    const topicData = JSON.parse(data.choices[0]?.message?.content || '{}');
 
-    try {
-      parsedResponse = JSON.parse(data.choices[0]?.message?.content || '{}');
-    } catch (e) {
-      parsedResponse = { posts: [] };
-    }
-
-    if (!parsedResponse.posts || !Array.isArray(parsedResponse.posts) || parsedResponse.posts.length === 0) {
-      parsedResponse.posts = [
-        {
-          text: `Key developments in ${personaDomain}: Autonomous systems and AI workflows are accelerating rapid integration across modern infrastructure.`,
-          rationale: `Direct relevance to ${personaName} operational strategy.`,
-          sources: []
-        }
-      ];
-    }
-
-    const agentId = 'agent_' + Date.now();
-    global.agentPosts[agentId] = parsedResponse.posts;
-
-    return res.status(200).json({ agentId, posts: parsedResponse.posts });
+    return res.status(200).json({ type: 'topics', topics: topicData.topics || [] });
 
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to generate agent content', details: error.message });
+    return res.status(500).json({ error: 'Failed to process request', details: error.message });
   }
 }
