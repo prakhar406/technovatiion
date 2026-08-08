@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonomous Persona Engine - Live Feed</title>
+  <title>Autonomous Persona Engine</title>
   <style>
     body {
       background-color: #0d1117;
@@ -34,6 +34,12 @@
       margin-bottom: 24px;
     }
 
+    h3 {
+      margin-top: 0;
+      color: #f0f6fc;
+      font-size: 1.1rem;
+    }
+
     .form-group {
       display: flex;
       gap: 10px;
@@ -60,7 +66,7 @@
       cursor: pointer;
     }
 
-    button.btn-feed { background: #3fb950; }
+    button.btn-feed { background: #238636; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .agent-status {
@@ -120,13 +126,13 @@
 </head>
 <body>
 
-  <div class="badge">🤖 Hackathon Evaluator Interface</div>
+  <div class="badge">✦ Autonomous Persona Engine</div>
   <h1>Autonomous Persona Engine</h1>
   <p class="subtitle">Initialize an agent once, then monitor its autonomous feed updates over time.</p>
 
   <!-- Step 1: Init Panel -->
   <div class="box">
-    <h3>1. Initialize Agent (`POST /api/agent/init`)</h3>
+    <h3>Initialize Agent</h3>
     <div class="form-group">
       <input type="text" id="personaName" value="Ada" placeholder="Agent Name (e.g., Ada)" />
       <input type="text" id="personaDomain" value="AI Security" placeholder="Domain (e.g., AI Security)" />
@@ -137,9 +143,9 @@
 
   <!-- Step 2: Feed Query Panel -->
   <div class="box">
-    <h3>2. Retrieve Feed (`GET /api/agent/feed`)</h3>
+    <h3>Retrieve Feed</h3>
     <div class="form-group">
-      <input type="text" id="feedAgentId" placeholder="Paste agentId here..." />
+      <input type="text" id="feedAgentId" placeholder="Paste Agent ID here..." />
       <button class="btn-feed" onclick="loadFeed()">Fetch Feed</button>
     </div>
   </div>
@@ -172,10 +178,9 @@
 
         if (!res.ok) throw new Error(data.error || 'Failed to initialize agent.');
 
-        resultDiv.innerHTML = `<strong>Status:</strong> Success<br><strong>agentId:</strong> ${data.agentId}`;
+        resultDiv.innerHTML = `<strong>Status:</strong> Active<br><strong>Agent ID:</strong> ${data.agentId}`;
         document.getElementById('feedAgentId').value = data.agentId;
         
-        // Auto load feed
         loadFeed();
 
       } catch (err) {
@@ -188,9 +193,9 @@
       const agentId = document.getElementById('feedAgentId').value.trim();
       const output = document.getElementById('feedOutput');
 
-      if (!agentId) return alert('Enter an agentId to query feed.');
+      if (!agentId) return alert('Enter an Agent ID to query feed.');
 
-      output.innerHTML = '<p style="color:#8b949e;">Fetching feed from `/api/agent/feed`...</p>';
+      output.innerHTML = '<p style="color:#8b949e;">Fetching feed updates...</p>';
 
       try {
         const res = await fetch(`/api/agent/feed?agentId=${encodeURIComponent(agentId)}`);
@@ -211,7 +216,7 @@
             </div>
             <div class="post-text">${post.text}</div>
             <div class="rationale-box">
-              <div class="rationale-title">Editorial Rationale</div>
+              <div class="rationale-title">Publishing Rationale</div>
               <div>${post.rationale}</div>
             </div>
             <div class="sources">
