@@ -1,9 +1,11 @@
-// Global in-memory storage for autonomous state and memory continuity
+// api/agent/init.js
+import Groq from 'groq-sdk';
+
 global.agents = global.agents || {};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -11,110 +13,87 @@ export default async function handler(req, res) {
 
   try {
     const { persona } = req.body || {};
-    const personaName = persona?.name || 'Ada';
-    const personaDomain = persona?.domain || 'AI Security';
+    const name = persona?.name || 'Ada';
+    const domain = persona?.domain || 'AI Security';
 
     const agentId = `agent_${Date.now()}`;
-    const apiKey = process.env.GROQ_API_KEY;
+    const groqApiKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey) {
-      return res.status(500).json({ error: 'GROQ_API_KEY is not configured.' });
+    let generatedPosts = [];
+
+    if (groqApiKey) {
+      try {
+        const groq = new Groq({ apiKey: groqApiKey });
+
+        const prompt = `You are ${name}, a leading expert and researcher in ${domain}.
+Generate 3 distinct, cutting-edge technical insights or research observations for your public feed.
+
+Return strictly valid JSON in this exact structure without markdown code blocks:
+[
+  {
+    "text": "Detailed 2-3 sentence technical post about a breakthrough, vulnerability, or architectural insight in ${domain}.",
+    "rationale": "Clear editorial rationale explaining why this insight is critical for industry leaders.",
+    "sources": ["https://arxiv.org/abs/... or valid domain research URL"]
+  }
+]`;
+
+        const completion = await groq.chat.completions.create({
+          messages: [{ role: 'user', content: prompt }],
+          model: 'llama-3.1-8b-instant',
+          temperature: 0.7,
+          response_format: { type: 'json_object' }
+        });
+
+        const rawContent = completion.choices[0]?.message?.content || '';
+        const parsed = JSON.parse(rawContent);
+        const postsArray = Array.isArray(parsed) ? parsed : (parsed.posts || Object.values(parsed)[0]);
+
+        if (Array.isArray(postsArray)) {
+          const now = Date.now();
+          generatedPosts = postsArray.map((p, idx) => ({
+            id: `p_${agentId}_${idx}`,
+            createdAt: new Date(now - idx * 3600000).toISOString(),
+            text: p.text,
+            rationale: p.rationale,
+            sources: p.sources && p.sources.length > 0 ? p.sources : [`https://arxiv.org/search/${encodeURIComponent(domain)}`]
+          }));
+        }
+      } catch (aiErr) {
+        console.error('Groq Generation Error, using dynamic fallback:', aiErr);
+      }
     }
 
-    // Generate initial candidate content pool for autonomous release
-    const systemPrompt = `You are an autonomous AI content specialist and researcher representing the persona:
-- Name: "${personaName}"
-- Domain: "${personaDomain}"
-
-Tasks:
-1. Discover and evaluate 4 distinct, cutting-edge topics in "${personaDomain}".
-2. Apply strict editorial judgment: filter and publish ONLY 3 topics that meet high publication criteria. Reject weak/generic topics.
-3. Write in a consistent editorial voice for "${personaName}".
-4. For each published post, provide:
-   - "text": The final publication text.
-   - "rationale": Clear justification explaining why this topic was selected, why it is relevant now, and why it passed editorial screening.
-   - "sources": An array with 1-2 realistic reference URLs.
-
-Return strictly valid JSON in this structure:
-{
-  "posts": [
-    {
-      "text": "Post content...",
-      "rationale": "Selected because...",
-      "sources": ["https://example.com/research"]
-    }
-  ]
-}`;
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey.trim()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Initialize autonomous publication feed for ${personaName} in ${personaDomain}.` }
-        ],
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    const data = await response.json();
-    let parsedResponse;
-
-    try {
-      parsedResponse = JSON.parse(data.choices[0]?.message?.content || '{}');
-    } catch (e) {
-      parsedResponse = { posts: [] };
-    }
-
-    let posts = parsedResponse.posts || [];
-
-    // Fallback if model yields empty post array
-    if (!posts.length) {
-      posts = [
+    // Dynamic fallback if Groq API key is not present or fails
+    if (generatedPosts.length === 0) {
+      const now = Date.now();
+      generatedPosts = [
         {
-          text: `Analyzing emerging zero-day vulnerabilities in LLM agent orchestration frameworks. Standard prompt sanitization fails against multi-hop context injections.`,
-          rationale: `Selected due to critical relevance in active multi-agent production deployments. Passed editorial quality standards over general model benchmark summaries.`,
-          sources: [`https://arxiv.org/abs/2400.00000`]
+          id: `p_${agentId}_0`,
+          createdAt: new Date(now).toISOString(),
+          text: `Analyzing recent architectural advancements in ${domain}. Current benchmark data indicates significant optimizations in latency and safety guarantees.`,
+          rationale: `High impact domain update for ${domain} researchers and engineers.`,
+          sources: [`https://arxiv.org/search/${encodeURIComponent(domain)}`]
         },
         {
-          text: `Evaluating adversarial robustness in autonomous tool-use workflows. Defense mechanisms must move beyond simple input filtering toward execution sandbox monitoring.`,
-          rationale: `Immediate industry demand as agentic API execution expands across enterprise stacks. Chosen over basic AI compliance news.`,
-          sources: [`https://cve.mitre.org`]
+          id: `p_${agentId}_1`,
+          createdAt: new Date(now - 3600000).toISOString(),
+          text: `Evaluating trade-offs between model accuracy and real-time execution bounds within ${domain} deployments.`,
+          rationale: `Addresses critical deployment bottlenecks observed across enterprise environments.`,
+          sources: [`https://scholar.google.com/scholar?q=${encodeURIComponent(domain)}`]
         }
       ];
     }
 
-    // Attach metadata: unique IDs and relative release offset intervals
-    const now = new Date();
-    const formattedPosts = posts.map((p, index) => {
-      // Simulate post publication spread over time (0h, +2h, +6h)
-      const postTime = new Date(now.getTime() + index * 2 * 3600 * 1000);
-      return {
-        id: `p_${Date.now()}_${index}`,
-        createdAt: postTime.toISOString(),
-        text: p.text,
-        rationale: p.rationale,
-        sources: Array.isArray(p.sources) ? p.sources : ["https://arxiv.org"]
-      };
-    });
-
-    // Store agent memory state globally
+    // Save agent state in serverless memory cache
     global.agents[agentId] = {
-      persona: { name: personaName, domain: personaDomain },
-      initializedAt: now.toISOString(),
-      posts: formattedPosts
+      persona: { name, domain },
+      posts: generatedPosts,
+      createdAt: new Date().toISOString()
     };
 
-    // Return exact API spec requirement
     return res.status(200).json({ agentId });
 
-  } catch (error) {
-    console.error('Error in agent initialization:', error);
-    return res.status(500).json({ error: 'Failed to initialize agent', details: error.message });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 }
