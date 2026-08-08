@@ -55,26 +55,10 @@
     }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #output {
-      margin-top: 24px;
-      max-width: 600px;
-      width: 100%;
-    }
-    .card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 12px;
-    }
-    .rationale {
-      background: #0d1117;
-      border-left: 3px solid #6366f1;
-      padding: 8px 12px;
-      margin-top: 10px;
-      font-size: 0.9em;
-      color: #cbd5e1;
-    }
+    #status { margin-top: 16px; color: #a5b4fc; }
+    #output { margin-top: 24px; max-width: 600px; width: 100%; }
+    .card { background: #161b22; border: 1px solid #30363d; padding: 16px; border-radius: 8px; margin-top: 12px; }
+    .rationale { background: #0d1117; border-left: 3px solid #6366f1; padding: 8px 12px; margin-top: 10px; font-size: 0.9em; color: #cbd5e1; }
   </style>
 </head>
 <body>
@@ -88,7 +72,7 @@
     <button id="generateBtn" onclick="handleGenerate()">Generate</button>
   </div>
 
-  <div id="status" style="margin-top: 16px; color: #6976b7;"></div>
+  <div id="status"></div>
   <div id="output"></div>
 
   <script>
@@ -108,28 +92,20 @@
       output.innerHTML = '';
 
       try {
-        // 1. Send persona to init API
         const initRes = await fetch('/api/agent/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            persona: {
-              name: input,
-              domain: input
-            }
+            persona: { name: input, domain: input }
           })
         });
 
         const initData = await initRes.json();
-
-        if (!initRes.ok) {
-          throw new Error(initData.error || 'Failed to initialize agent.');
-        }
+        if (!initRes.ok) throw new Error(initData.error || 'Failed to initialize agent.');
 
         const agentId = initData.agentId;
-        status.innerText = `Agent initialized (ID: ${agentId}). Generating news post in 8 seconds...`;
+        status.innerText = `Agent initialized (ID: ${agentId}). Generating feed in 8s...`;
 
-        // 2. Wait 8 seconds for background Groq LLM completion
         setTimeout(() => fetchFeed(agentId), 8000);
 
       } catch (err) {
@@ -146,7 +122,6 @@
       try {
         const res = await fetch(`/api/agent/feed?agentId=${agentId}`);
         const data = await res.json();
-
         btn.disabled = false;
 
         if (!data.posts || data.posts.length === 0) {
